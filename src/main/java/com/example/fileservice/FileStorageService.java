@@ -3,6 +3,7 @@ package com.example.fileservice;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,13 +27,18 @@ public class FileStorageService {
 
     public String uploadFile(MultipartFile file) {
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentType(file.getContentType());
+        metadata.setContentLength(file.getSize());
+
         try {
-            s3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), null));
+            s3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
             return s3Client.getUrl(bucketName, fileName).toString();
         } catch (IOException e) {
             throw new RuntimeException("Error storing file to S3", e);
         }
     }
+
 
     public String updateFile(MultipartFile file, String fileName) {
         try {
