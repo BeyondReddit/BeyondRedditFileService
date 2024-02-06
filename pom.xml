@@ -59,6 +59,10 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.12.125</version> <!-- Use the latest version available -->
         </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
 
 
         <dependency>
