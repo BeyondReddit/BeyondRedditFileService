@@ -25,6 +25,19 @@ public class FileStorageService {
         this.s3Client = s3Client;
     }
 
+//    public String uploadFile(MultipartFile file) {
+//        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+//        ObjectMetadata metadata = new ObjectMetadata();
+//        metadata.setContentType(file.getContentType());
+//        metadata.setContentLength(file.getSize());
+//
+//        try {
+//            s3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
+//            return s3Client.getUrl(bucketName, fileName).toString();
+//        } catch (IOException e) {
+//            throw new RuntimeException("Error storing file to S3", e);
+//        }
+//    }
     public String uploadFile(MultipartFile file) {
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
         ObjectMetadata metadata = new ObjectMetadata();
@@ -33,11 +46,30 @@ public class FileStorageService {
 
         try {
             s3Client.putObject(new PutObjectRequest(bucketName, fileName, file.getInputStream(), metadata));
-            return s3Client.getUrl(bucketName, fileName).toString();
+            // Now that the file is uploaded, generate a pre-signed URL for direct access.
+            return generatePresignedUrl(fileName);
         } catch (IOException e) {
             throw new RuntimeException("Error storing file to S3", e);
         }
     }
+
+    public String generatePresignedUrl(String fileName) {
+        // Set the presigned URL to expire after one hour.
+        java.util.Date expiration = new java.util.Date();
+        long expTimeMillis = expiration.getTime();
+        expTimeMillis += 1000 * 60 * 60; // 1 hour
+        expiration.setTime(expTimeMillis);
+
+        // Generate the presigned URL.
+        GeneratePresignedUrlRequest generatePresignedUrlRequest =
+                new GeneratePresignedUrlRequest(bucketName, fileName)
+                        .withMethod(HttpMethod.GET)
+                        .withExpiration(expiration);
+        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
+
+        return url.toString();
+    }
+
 
 
     public String updateFile(MultipartFile file, String fileName) {
@@ -50,21 +82,21 @@ public class FileStorageService {
         }
     }
 
-    public String getFileUrl(String fileName) {
-        // Generates a pre-signed URL for downloading the file. The URL is valid for 1 hour.
-        java.util.Date expiration = new java.util.Date();
-        long expTimeMillis = expiration.getTime();
-        expTimeMillis += 1000 * 60 * 60; // 1 hour
-        expiration.setTime(expTimeMillis);
-
-        GeneratePresignedUrlRequest generatePresignedUrlRequest =
-                new GeneratePresignedUrlRequest(bucketName, fileName)
-                        .withMethod(HttpMethod.GET)
-                        .withExpiration(expiration);
-        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
-
-        return url.toString();
-    }
+//    public String getFileUrl(String fileName) {
+//        // Generates a pre-signed URL for downloading the file. The URL is valid for 1 hour.
+//        java.util.Date expiration = new java.util.Date();
+//        long expTimeMillis = expiration.getTime();
+//        expTimeMillis += 1000 * 60 * 60; // 1 hour
+//        expiration.setTime(expTimeMillis);
+//
+//        GeneratePresignedUrlRequest generatePresignedUrlRequest =
+//                new GeneratePresignedUrlRequest(bucketName, fileName)
+//                        .withMethod(HttpMethod.GET)
+//                        .withExpiration(expiration);
+//        URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
+//
+//        return url.toString();
+//    }
 
 
     public void deleteFile(String fileName) {
